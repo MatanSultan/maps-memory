@@ -12,7 +12,7 @@ function App() {
         // User is signed in.
         setUser(user);
       } else {
-        // No user is signed in.
+        // No user is signed in.....
         setUser(null);
       }
     });
