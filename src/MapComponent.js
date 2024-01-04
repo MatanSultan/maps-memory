@@ -1,20 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { doc, setDoc, collection, getDocs } from "firebase/firestore";
+import { firestore } from "./firebase";
 
-// יצירת אייקון מותאם אישית עבור המרקר
 const redIcon = new L.Icon({
-  iconUrl: "https://emojigraph.org/media/apple/exclamation-mark_2757.png", // החלף בכתובת של תמונת האייקון שלך
-  iconSize: [30, 42], // גודל האייקון
-  iconAnchor: [15, 42], // נקודת העגינה של האייקון
-  popupAnchor: [0, -42], // נקודת העגינה של ה-Popup
+  iconUrl: "https://emojigraph.org/media/apple/exclamation-mark_2757.png",
+  iconSize: [30, 42],
+  iconAnchor: [15, 42],
+  popupAnchor: [0, -42],
 });
 
 export default function TelAvivMap() {
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
   const [markers, setMarkers] = useState([]);
-  const [currentPos, setCurrentPos] = useState(null);
 
   const mapStyle = {
     height: "500px",
@@ -33,15 +35,49 @@ export default function TelAvivMap() {
   };
 
   const handleMapClick = (e) => {
-    setCurrentPos(e.latlng);
+    const newPosition = e.latlng;
+    console.log("Selected Location:", newPosition);
+    setSelectedLocation(newPosition);
   };
 
   const addMarker = () => {
-    if (currentPos) {
-      setMarkers([...markers, currentPos]);
-      setCurrentPos(null); // איפוס המיקום הנוכחי
+    if (
+      selectedLocation &&
+      selectedLocation.lat != null &&
+      selectedLocation.lng != null
+    ) {
+      console.log("Position selected:", selectedLocation);
+      const newMarker = { ...selectedLocation };
+      saveMarkerToFirebase(newMarker);
+      setMarkers((previousMarkers) => [...previousMarkers, newMarker]);
+    } else {
+      console.log("No position selected");
     }
   };
+
+  const saveMarkerToFirebase = async (position) => {
+    try {
+      const markerId = `marker-${new Date().getTime()}`;
+      const markerRef = doc(firestore, "markers", markerId);
+      await setDoc(markerRef, { position });
+      console.log("Marker saved successfully");
+    } catch (error) {
+      console.error("Error saving marker: ", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchMarkers = async () => {
+      const querySnapshot = await getDocs(collection(firestore, "markers"));
+      const loadedMarkers = [];
+      querySnapshot.forEach((doc) => {
+        loadedMarkers.push(doc.data().position);
+      });
+      setMarkers(loadedMarkers);
+    };
+
+    fetchMarkers();
+  }, []);
 
   return (
     <div style={mapStyle}>
@@ -51,39 +87,29 @@ export default function TelAvivMap() {
         minZoom={defaultView.minZoom}
         maxBounds={defaultView.maxBounds}
         style={mapStyle}
-        whenCreated={(map) => {
-          map.on("click", handleMapClick);
-        }}
+        whenCreated={(map) => map.on("click", handleMapClick)}
       >
         <TileLayer
           url="https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}"
           attribution='&copy; <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> contributors'
           id="mapbox/streets-v11"
-          accessToken="pk.eyJ1IjoibWF0YW5zdWx0YW4xIiwiYSI6ImNscXhxNGFkNzBmZmoyd3BocW12ZzlhYnoifQ.xk1RMDRoxVNSyquhnatX4w"
+          accessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
         />
-        {markers.map((position, idx) => (
-          <Marker key={idx} position={position} icon={redIcon}>
-            <Popup>A new event here!</Popup>
-          </Marker>
-        ))}
+        {markers.map((position, idx) => {
+          if (position && position.lat != null && position.lng != null) {
+            return (
+              <Marker key={idx} position={position} icon={redIcon}>
+                <Popup>A new event here!</Popup>
+              </Marker>
+            );
+          } else {
+            console.log("Invalid marker position", position);
+            return null;
+          }
+        })}
       </MapContainer>
-      <button
-        onClick={addMarker}
-        style={{ position: "absolute", top: "10px", right: "10px" }}
-      >
-        Add Mark
-      </button>
-      {/* Description Container */}
       <div className=" bg-blue-200  rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-2">Welcome to My Map App</h2>
-        <p className="text-lg">
-          Explore and add points of interest on the map. An interactive map
-          application that allows users to record and share personal and
-          historical development stories related to specific places. Users
-          upload photos, written stories, and even voice recordings to the map.
-          It can be an amazing tool for preserving cultural and historical
-          memory.
-        </p>
+        <button onClick={addMarker}>Add Mark</button>
       </div>
     </div>
   );

@@ -1,16 +1,15 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCC0axCgq2yx9e_25tagBlPFXpLijMlJ7o",
-  authDomain: "mapsapp-matan.firebaseapp.com",
-  projectId: "mapsapp-matan",
-  storageBucket: "mapsapp-matan.appspot.com",
-  messagingSenderId: "24494650512",
-  appId: "1:24494650512:web:53ca15492a91bc258a5415",
-  measurementId: "G-BXC0NR9015",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
