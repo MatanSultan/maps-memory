@@ -1,4 +1,4 @@
-import { auth, provider, firestore } from "./firebase"; // Make sure the path to firebase.js is correct
+import { auth, provider, firestore } from "./firebase"; // Ensure the path to firebase.js is correct
 import { signInWithPopup, getAdditionalUserInfo } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
